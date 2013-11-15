@@ -22,6 +22,7 @@ xtag.register('webrtc-context', {
                 }
 	    }.bind(this));
 
+            this.videos = [this.local];
             this.context = new SimpleWebRTC({
                 localVideoEl: this.local,
                 remoteVideosEl: this.remote,
@@ -34,17 +35,41 @@ xtag.register('webrtc-context', {
                 }.bind(this));
             }.bind(this));
 
-            this.context.on('speaking', function(id) {
-                console.log('speaking', id);
-            });
+            this.context.on('speaking', function(peer) {
+                if (!peer) {
+                    var video = this.local;
+                } else {
+                    var video = this.peers[peer.id].videoEl;
+                }
+                this.videos.forEach(function(v) {
+                    v.classList.remove('speaking');
+                });
+                video.classList.add('speaking');
+            }.bind(this));
+
+            this.context.on('stoppedSpeaking', function(peer) {
+                if (!peer) {
+                    var video = this.local;
+                } else {
+                    var video = this.peers[peer.id].videoEl;
+                }
+                video.classList.remove('speaking');
+            }.bind(this));
 
             this.context.on('videoAdded', function(video, peer) {
                 this.peers[peer.id] = peer;
+                video.peerId = peer.id;
+                this.videos.push(video);
                 console.log('videoAdded', peer);
             }.bind(this));
 
             this.context.on('videoRemoved', function(video, peer) {
                 delete this.peers[peer.id];
+                this.videos.forEach(function(v, i) {
+                    if (v.peerId == peer.id) {
+                        this.videos.splice(i, 1);
+                    }
+                }.bind(this));
                 console.log('videoRemoved', peer)
             }.bind(this));
         }
