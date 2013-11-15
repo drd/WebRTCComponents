@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Example of WebRTC Components</title>
+    <script src="libs/socket.io.js"></script>
+    <script src="libs/simplewebrtc.bundle.js"></script>
+    <script src="libs/x-tag-core.js"></script>
+    <script src="js/webrtc.js"></script>
+    <link rel=stylesheet href="css/webrtc.css\""></link>
+  </head>
+  <body>
+    <template id=webrtc>
+      <video local></video>
+      <div remote></div>
+      <h1>Loading...</h1>
+    </template>
+
+    <webrtc-context auto-request room=awesomesauce>
+
+  </body>
+</html>
