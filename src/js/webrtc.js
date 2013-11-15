@@ -12,6 +12,7 @@ xtag.register('webrtc-context', {
         inserted: function() {
             this.room = getAttr(this, 'room').textContent;
             this.roomName = this.querySelectorAll('h1')[0];
+            this.peers = {};
 
 	    Array.prototype.slice.call(this.children, 0).forEach(function(child) {
                 if (getAttr(child, 'local')) {
@@ -31,6 +32,20 @@ xtag.register('webrtc-context', {
                 this.context.joinRoom(this.room, function() {
                     this.roomName.textContent = this.room;
                 }.bind(this));
+            }.bind(this));
+
+            this.context.on('speaking', function(id) {
+                console.log('speaking', id);
+            });
+
+            this.context.on('videoAdded', function(video, peer) {
+                this.peers[peer.id] = peer;
+                console.log('videoAdded', peer);
+            }.bind(this));
+
+            this.context.on('videoRemoved', function(video, peer) {
+                delete this.peers[peer.id];
+                console.log('videoRemoved', peer)
             }.bind(this));
         }
     }
