@@ -10,30 +10,73 @@ xtag.register('webrtc-context', {
             this.appendChild(tpl.cloneNode(true));
         },
         inserted: function() {
+            WebRTCContext(this);
+
             this.room = getAttr(this, 'room').textContent;
-            this.roomName = this.querySelectorAll('h1')[0];
+            this.roomName = this.querySelector('.room');
             this.peers = {};
 
-	    Array.prototype.slice.call(this.children, 0).forEach(function(child) {
-                if (getAttr(child, 'local')) {
-                    this.local = child;
-                } else if (getAttr(child, 'remote')) {
-                    this.remote = child;
-                }
-	    }.bind(this));
+            this.local = this.querySelector('[local]');
+            this.remote = this.querySelector('[remote]');
 
             this.videos = [this.local];
             this.context = new SimpleWebRTC({
+                url: 'http://localhost:8888',
+                debug: !true,
                 localVideoEl: this.local,
                 remoteVideosEl: this.remote,
                 autoRequestMedia: !!getAttr(this, 'auto-request')
             });
 
-            this.context.on('readyToCall', function() {
-                this.context.joinRoom(this.room, function() {
-                    this.roomName.textContent = this.room;
-                }.bind(this));
+            this.initChildren();
+
+            this.setupJoinLeave.apply(this);
+            this.setupSpeaking.apply(this);
+        }
+    }
+});
+
+
+xtag.register('webrtc-counter', {
+    lifecycle: {
+        created: function() {
+            this.dataset['webrtc'] = true;
+        },
+        inserted: function() {
+            this.innerHTML = '<span class="counter">';
+            this.counter = this.querySelector('span');
+        }
+    },
+    methods: {
+        init: function(context) {
+            this.context = context;
+            this.count = context.videos.length;
+            this.counter.innerText = this.count;
+            context.context.on('video*', function() {
+                this.counter.innerText = this.context.videos.length;
             }.bind(this));
+        }
+    }
+});
+
+
+function WebRTCContext(obj) {
+    var proto = {
+        initChildren: function() {
+            var children = Array.prototype.slice.apply(
+                this.querySelectorAll('[data-webrtc=true]'));
+
+            children.forEach(function(child) {
+                if (child.init) {
+                    child.init(this);
+                }
+            }.bind(this));
+        },
+
+        setupSpeaking: function() {
+            if (!getAttr(this, 'speaking', true)) {
+                return;
+            }
 
             this.context.on('speaking', function(peer) {
                 if (!peer) {
@@ -55,6 +98,15 @@ xtag.register('webrtc-context', {
                 }
                 video.classList.remove('speaking');
             }.bind(this));
+        },
+
+        setupJoinLeave: function() {
+            this.context.on('readyToCall', function(sessionId) {
+                this.sessionId = sessionId;
+                this.context.joinRoom(this.room, function() {
+                    this.roomName.textContent = this.room;
+                }.bind(this));
+            }.bind(this));
 
             this.context.on('videoAdded', function(video, peer) {
                 this.peers[peer.id] = peer;
@@ -73,5 +125,9 @@ xtag.register('webrtc-context', {
                 console.log('videoRemoved', peer)
             }.bind(this));
         }
-    }
-});
+    };
+
+    Object.getOwnPropertyNames(proto).forEach(function(name) {
+        obj[name] = proto[name];
+    });
+};
