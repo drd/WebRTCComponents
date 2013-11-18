@@ -20,9 +20,7 @@ xtag.register('webrtc-context', {
             this.remote = this.querySelector('[remote]');
 
             this.videos = [this.local];
-            this.context = new SimpleWebRTC({
-                url: 'http://localhost:8888',
-                debug: !true,
+            this.webrtc = new SimpleWebRTC({
                 localVideoEl: this.local,
                 remoteVideosEl: this.remote,
                 autoRequestMedia: !!getAttr(this, 'auto-request')
